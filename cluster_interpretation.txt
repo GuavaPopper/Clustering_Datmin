@@ -1,0 +1,71 @@
+======================================================================
+INTERPRETASI CLUSTERING WILAYAH RAWAN BENCANA INDONESIA
+(UPDATED: Cluster 0=Low, 1=Extreme, 2=High)
+======================================================================
+
+CLUSTER 0: LOW-MODERATE RISK ZONE
+Jumlah Provinsi: 36
+Deskripsi: Daerah dengan risiko bencana relatif lebih rendah
+Rekomendasi: Maintain readiness dan strengthen local capacity
+
+Provinsi:
+  - ACEH
+  - BALI
+  - BANTEN
+  - BENGKULU
+  - DAERAH ISTIMEWA YOGYAKARTA
+  - DI YOGYAKARTA
+  - DKI JAKARTA
+  - GORONTALO
+  - JAMBI
+  - KALIMANTAN BARAT
+  - KALIMANTAN SELATAN
+  - KALIMANTAN TENGAH
+  - KALIMANTAN TIMUR
+  - KALIMANTAN UTARA
+  - KEPULAUAN BANGKA BELITUNG
+  - KEPULAUAN RIAU
+  - LAMPUNG
+  - MALUKU
+  - MALUKU UTARA
+  - NUSA TENGGARA BARAT
+  - NUSA TENGGARA TIMUR
+  - P A P U A
+  - PAPUA
+  - PAPUA BARAT
+  - PAPUA BARAT DAYA
+  - PAPUA PEGUNUNGAN
+  - PAPUA SELATAN
+  - PAPUA TENGAH
+  - RIAU
+  - SULAWESI BARAT
+  - SULAWESI SELATAN
+  - SULAWESI TENGGARA
+  - SULAWESI UTARA
+  - SUMATERA BARAT
+  - SUMATERA SELATAN
+  - SUMATERA UTARA
+
+----------------------------------------------------------------------
+
+CLUSTER 1: EXTREME RISK ZONE
+Jumlah Provinsi: 1
+Deskripsi: Daerah dengan korban jiwa sangat tinggi dan kerusakan ekstrem
+Rekomendasi: Prioritas utama untuk early warning system dan disaster preparedness
+
+Provinsi:
+  - SULAWESI TENGAH
+
+----------------------------------------------------------------------
+
+CLUSTER 2: HIGH RISK ZONE
+Jumlah Provinsi: 3
+Deskripsi: Daerah dengan frekuensi bencana sangat tinggi (Pulau Jawa)
+Rekomendasi: Fokus pada mitigasi banjir dan infrastruktur resilient
+
+Provinsi:
+  - JAWA BARAT
+  - JAWA TENGAH
+  - JAWA TIMUR
+
+----------------------------------------------------------------------
