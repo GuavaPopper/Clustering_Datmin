@@ -22,20 +22,23 @@ Project ini menganalisis dataset bencana alam Indonesia (2018-2024) dari BNPB un
 
 ## 🎯 Hasil Clustering
 
-### 🟢 **Cluster 0: LOW-MODERATE RISK**
-- **36 provinsi** (mayoritas Indonesia)
-- Rata-rata: 422 kejadian, 130 korban meninggal
-- **Rekomendasi:** Maintain readiness & strengthen local capacity
+> Clustering menggunakan **38 provinsi** (setelah normalisasi nama duplikat), dengan **log1p + RobustScaler** untuk meredam outlier bencana besar 2018 (Palu, Lombok, Selat Sunda). K=3 dipilih demi tingkatan risiko Low/High/Extreme.
+
+### 🟢 **Cluster 0: LOW RISK**
+- **4 provinsi:** Papua Barat Daya, Papua Pegunungan, Papua Selatan, Papua Tengah
+- Rata-rata: 4 kejadian, 5 korban meninggal, 510 rumah rusak
+- **Catatan:** risiko rendah lebih mencerminkan periode data sangat pendek (provinsi pemekaran 2022, ~1,5 thn), bukan tentu bebas risiko
+- **Rekomendasi:** Lengkapi/pantau data & bangun kapasitas BPBD baru
 
 ### 🟠 **Cluster 1: HIGH RISK**
-- **3 provinsi:** JAWA BARAT, JAWA TENGAH, JAWA TIMUR
-- Rata-rata: **4,349 kejadian** (tertinggi!), 1,082 korban meninggal
-- **Rekomendasi:** Fokus mitigasi banjir, longsor, & infrastruktur resilient
+- **21 provinsi** (risiko menengah, mayoritas Indonesia)
+- Rata-rata: 339 kejadian, 81 korban meninggal, 5.648 rumah rusak
+- **Rekomendasi:** Prioritas mitigasi banjir & karhutla, perkuat early warning
 
 ### 🔴 **Cluster 2: EXTREME RISK**
-- **1 provinsi:** SULAWESI TENGAH
-- Rata-rata: 525 kejadian, **4,261 korban meninggal** (tertinggi!)
-- **Rekomendasi:** Prioritas #1 untuk early warning system & disaster preparedness
+- **13 provinsi:** Aceh, Bali, Banten, Jawa Barat, Jawa Tengah, Jawa Timur, Kalimantan Selatan, NTB, NTT, Sulawesi Selatan, Sulawesi Tengah, Sumatera Barat, Sumatera Utara
+- Rata-rata: **1.665 kejadian**, **806 korban meninggal**, **56.011 rumah rusak** (tertinggi di semua metrik)
+- **Rekomendasi:** Prioritas tertinggi — infrastruktur tahan bencana, early warning gempa/tsunami (Sulteng, NTB, Banten), mitigasi banjir & longsor (Pulau Jawa)
 
 ---
 
@@ -126,8 +129,9 @@ pip install pandas numpy matplotlib seaborn scikit-learn openpyxl
 
 ### 1️⃣ **Data Preprocessing**
 - Handle missing values
+- Normalisasi nama provinsi duplikat (40 → 38 provinsi)
 - Feature engineering (agregasi per provinsi)
-- Standardization dengan StandardScaler
+- **log1p transform + RobustScaler** (anti-outlier 2018, menggantikan StandardScaler)
 
 ### 2️⃣ **Feature Engineering**
 - Total kejadian bencana per provinsi
@@ -137,15 +141,15 @@ pip install pandas numpy matplotlib seaborn scikit-learn openpyxl
 
 ### 3️⃣ **Clustering**
 - **Algoritma:** K-Means Clustering
-- **Penentuan K optimal:** Elbow Method + Silhouette Score
-- **Hasil:** K=3 (Silhouette Score: 0.5920)
+- **Penentuan K:** Elbow Method + Silhouette Score (silhouette tertinggi di K=2 = 0.487)
+- **Hasil:** **K=3** dipilih manual demi tingkatan risiko Low/High/Extreme yang lebih bermakna
 
 ### 4️⃣ **Relabeling Cluster**
 - Cluster di-relabel berdasarkan composite severity score
 - **0 = Low Risk, 1 = High Risk, 2 = Extreme Risk**
 
 ### 5️⃣ **Visualisasi**
-- PCA 2D scatter plot (63.16% explained variance)
+- PCA 2D scatter plot (78.5% explained variance)
 - Bar chart comparison
 - Heatmap top 15 provinsi
 
@@ -162,21 +166,21 @@ pip install pandas numpy matplotlib seaborn scikit-learn openpyxl
 
 ## 💡 Rekomendasi Kebijakan
 
-### 🔴 **Untuk Cluster 2 (Extreme Risk - Sulteng)**
-- **Prioritas #1** untuk early warning system gempa & tsunami
-- Penguatan infrastruktur tahan gempa
+### 🔴 **Untuk Cluster 2 (Extreme Risk - 13 provinsi)**
+- **Prioritas #1** untuk early warning system gempa & tsunami (khususnya Sulteng, NTB, Banten)
+- Penguatan infrastruktur tahan gempa & rumah tahan bencana
+- Mitigasi **banjir** & **tanah longsor** untuk Pulau Jawa (drainase, normalisasi sungai, reboisasi)
 - Evakuasi drills rutin untuk penduduk pesisir
 
-### 🟠 **Untuk Cluster 1 (High Risk - Jawa)**
-- Fokus mitigasi **banjir** (drainase, waduk, normalisasi sungai)
-- Mitigasi **tanah longsor** (reboisasi, retaining walls)
-- Infrastruktur resilient (rumah tahan bencana)
-- Sistem peringatan dini berbasis teknologi
-
-### 🟢 **Untuk Cluster 0 (Low-Moderate Risk)**
+### 🟠 **Untuk Cluster 1 (High Risk - 21 provinsi)**
+- Fokus mitigasi **banjir** dan **kebakaran hutan & lahan**
+- Perkuat sistem peringatan dini berbasis teknologi
 - Maintain readiness (stock logistik, pelatihan SAR)
-- Mitigasi kebakaran hutan & lahan
-- Strengthen local capacity (BPBD, relawan)
+
+### 🟢 **Untuk Cluster 0 (Low Risk - 4 provinsi Papua pemekaran)**
+- Lengkapi & pantau pengumpulan data (periode masih pendek)
+- Bangun kapasitas BPBD provinsi baru
+- Strengthen local capacity (relawan, infrastruktur dasar kebencanaan)
 
 ---
 
