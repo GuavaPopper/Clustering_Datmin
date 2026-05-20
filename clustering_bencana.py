@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.preprocessing import RobustScaler, MinMaxScaler
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_score
@@ -41,8 +41,18 @@ df.dropna(subset=['death'], inplace=True)
 for col in ['missing_person', 'injured_person', 'flooded_house', 'damaged_house', 'damaged_facility']:
     df[col] = df[col].fillna(0)
 
+# Normalisasi nama provinsi duplikat (varian ejaan/spasi) sebelum agregasi,
+# agar kejadian satu provinsi tidak terpecah jadi dua baris.
+# Provinsi baru hasil pemekaran 2022 (PAPUA BARAT DAYA/PEGUNUNGAN/SELATAN/TENGAH) tetap terpisah.
+province_name_fix = {
+    'P A P U A': 'PAPUA',
+    'DAERAH ISTIMEWA YOGYAKARTA': 'DI YOGYAKARTA',
+}
+df['province'] = df['province'].replace(province_name_fix)
+
 print(f"✅ Missing values handled")
 print(f"✅ Data after cleaning: {len(df)} rows")
+print(f"✅ Province names normalized: {df['province'].nunique()} unique provinces")
 
 # Extract date features
 df['date'] = pd.to_datetime(df['date'])
@@ -92,13 +102,20 @@ print("💾 Saved: clustering_province_features.csv")
 # ========================================
 # 4. STANDARDIZATION
 # ========================================
-print("\n📐 STEP 4: STANDARDIZATION")
+print("\n📐 STEP 4: LOG-TRANSFORM & ROBUST SCALING")
 
 features_to_cluster = province_features.drop('province', axis=1)
-scaler = StandardScaler()
-features_scaled = scaler.fit_transform(features_to_cluster)
 
-print(f"✅ Data standardized: {features_scaled.shape}")
+# log1p meredam ekor kanan ekstrem -> satu kejadian katastropik 2018
+# (Palu, Lombok, Selat Sunda) tidak lagi mendominasi jarak antar provinsi.
+# Semua fitur adalah count non-negatif, jadi log1p aman (log1p(0)=0).
+features_log = np.log1p(features_to_cluster)
+
+# RobustScaler memakai median & IQR -> tahan terhadap sisa outlier
+scaler = RobustScaler()
+features_scaled = scaler.fit_transform(features_log)
+
+print(f"✅ Features log-transformed & robust-scaled: {features_scaled.shape}")
 
 # ========================================
 # 5. ELBOW METHOD & SILHOUETTE SCORE
@@ -134,9 +151,15 @@ plt.tight_layout()
 plt.savefig('elbow_method.png', dpi=150, bbox_inches='tight')
 print("✅ Plot saved: elbow_method.png")
 
-# Recommend K
-optimal_k = K_range[np.argmax(silhouette_scores)]
-print(f"\n🎯 Recommended K: {optimal_k} (Silhouette Score: {max(silhouette_scores):.4f})")
+# Silhouette terbaik (informatif)
+silhouette_best_k = K_range[np.argmax(silhouette_scores)]
+print(f"\n📐 Silhouette tertinggi di K={silhouette_best_k} (Score: {max(silhouette_scores):.4f})")
+
+# Override manual: pakai K=3 demi tingkatan risiko Low/High/Extreme.
+# Silhouette memuncak di K=2 karena 5 provinsi pemekaran Papua 2022 (data ~1,5 thn)
+# mendominasi sebagai outlier data-miskin sehingga memecah jadi 2 grup saja.
+optimal_k = 3
+print(f"🎯 K yang dipakai (manual): {optimal_k}")
 
 # ========================================
 # 6. K-MEANS CLUSTERING
@@ -149,7 +172,7 @@ province_features['cluster'] = kmeans.fit_predict(features_scaled)
 print(f"✅ Clustering completed")
 
 # ========================================
-# 7. RELABEL CLUSTER (0=Low, 1=Extreme, 2=High)
+# 7. RELABEL CLUSTER (0=Low, 1=High, 2=Extreme)
 # ========================================
 print("\n🔄 STEP 7: RELABELING CLUSTER")
 
@@ -177,7 +200,15 @@ for old, new in old_to_new.items():
 # Apply relabeling
 province_features['cluster'] = province_features['cluster'].map(old_to_new)
 
-print(f"\n✅ Cluster relabeled (0=Low, 1=High, 2=Extreme)")
+# Nama tier risiko (terendah -> tertinggi), beradaptasi terhadap optimal_k
+if optimal_k == 2:
+    cluster_labels = ['Low', 'High']
+elif optimal_k == 3:
+    cluster_labels = ['Low', 'High', 'Extreme']
+else:
+    cluster_labels = [f'Tier {i}' for i in range(optimal_k)]
+
+print(f"\n✅ Clusters relabeled: {', '.join(f'{i}={n}' for i, n in enumerate(cluster_labels))}")
 
 # ========================================
 # 8. CLUSTER ANALYSIS
@@ -217,11 +248,9 @@ province_features['PCA2'] = features_pca[:, 1]
 plt.figure(figsize=(16, 10))
 
 _all_colors  = ['#44AA44', '#FFA500', '#FF4444', '#8844AA', '#4488FF']
-_all_names   = ['Cluster 0: LOW RISK', 'Cluster 1: HIGH RISK', 'Cluster 2: EXTREME RISK',
-                'Cluster 3: RISK-4', 'Cluster 4: RISK-5']
 _all_markers = ['o', '^', 's', 'D', 'P']
 colors        = _all_colors[:optimal_k]
-cluster_names = _all_names[:optimal_k]
+cluster_names = [f'Cluster {i}: {n.upper()} RISK' for i, n in enumerate(cluster_labels)]
 markers       = _all_markers[:optimal_k]
 
 for i in range(optimal_k):
@@ -239,7 +268,8 @@ plt.xlabel(f'PCA 1 ({pca.explained_variance_ratio_[0]*100:.1f}% variance)',
           fontsize=14, fontweight='bold')
 plt.ylabel(f'PCA 2 ({pca.explained_variance_ratio_[1]*100:.1f}% variance)', 
           fontsize=14, fontweight='bold')
-plt.title('Clustering Wilayah Rawan Bencana Indonesia\n(0=Low Risk, 1=High Risk, 2=Extreme Risk)', 
+plt.title('Clustering Wilayah Rawan Bencana Indonesia\n(' +
+          ', '.join(f'{i}={n} Risk' for i, n in enumerate(cluster_labels)) + ')',
           fontsize=18, fontweight='bold', pad=20)
 plt.legend(fontsize=13, loc='best', frameon=True, shadow=True)
 plt.grid(True, alpha=0.3, linestyle='--')
@@ -253,62 +283,43 @@ print("✅ Saved: clustering_visualization.png")
 print("\n📊 STEP 10: CLUSTER COMPARISON")
 
 fig, axes = plt.subplots(2, 2, figsize=(16, 12))
-fig.suptitle('Perbandingan Karakteristik Cluster\n(0=Low, 1=High, 2=Extreme)', 
+fig.suptitle('Perbandingan Karakteristik Cluster\n(' +
+             ', '.join(f'{i}={n}' for i, n in enumerate(cluster_labels)) + ')',
              fontsize=18, fontweight='bold', y=0.995)
 
-colors_cluster = ['#44AA44', '#FFA500', '#FF4444']
+_palette = ['#44AA44', '#FFA500', '#FF4444', '#8844AA', '#4488FF']
+colors_cluster = _palette[:optimal_k]
+xticks = list(range(optimal_k))
+xticklabels = [f'{i}\n({n})' for i, n in enumerate(cluster_labels)]
 
-# Total Bencana
-cluster_avg = province_features.groupby('cluster')['total_disasters'].mean()
-axes[0, 0].bar(cluster_avg.index, cluster_avg.values, color=colors_cluster, 
-              edgecolor='black', linewidth=2)
-axes[0, 0].set_xlabel('Cluster', fontsize=12, fontweight='bold')
-axes[0, 0].set_ylabel('Rata-rata Total Bencana', fontsize=12)
-axes[0, 0].set_title('Total Kejadian Bencana', fontsize=14, fontweight='bold')
-axes[0, 0].set_xticks([0, 1, 2])
-axes[0, 0].set_xticklabels(['0\n(Low)', '1\n(High)', '2\n(Extreme)'])
-axes[0, 0].grid(axis='y', alpha=0.3)
-for i, v in enumerate(cluster_avg.values):
-    axes[0, 0].text(i, v + 100, f'{v:.0f}', ha='center', fontweight='bold', fontsize=12)
+def _bar(ax, series, ylabel, title):
+    series = series.reindex(range(optimal_k))
+    ax.bar(series.index, series.values, color=colors_cluster, edgecolor='black', linewidth=2)
+    ax.set_xlabel('Cluster', fontsize=12, fontweight='bold')
+    ax.set_ylabel(ylabel, fontsize=12)
+    ax.set_title(title, fontsize=14, fontweight='bold')
+    ax.set_xticks(xticks)
+    ax.set_xticklabels(xticklabels)
+    ax.grid(axis='y', alpha=0.3)
+    pad = series.max() * 0.02  # offset label proporsional terhadap tinggi bar
+    for i, v in zip(series.index, series.values):
+        ax.text(i, v + pad, f'{v:.0f}', ha='center', fontweight='bold', fontsize=12)
 
-# Korban Jiwa
-cluster_death = province_features.groupby('cluster')['total_death'].mean()
-axes[0, 1].bar(cluster_death.index, cluster_death.values, color=colors_cluster, 
-              edgecolor='black', linewidth=2)
-axes[0, 1].set_xlabel('Cluster', fontsize=12, fontweight='bold')
-axes[0, 1].set_ylabel('Rata-rata Korban Meninggal', fontsize=12)
-axes[0, 1].set_title('Korban Meninggal', fontsize=14, fontweight='bold')
-axes[0, 1].set_xticks([0, 1, 2])
-axes[0, 1].set_xticklabels(['0\n(Low)', '1\n(High)', '2\n(Extreme)'])
-axes[0, 1].grid(axis='y', alpha=0.3)
-for i, v in enumerate(cluster_death.values):
-    axes[0, 1].text(i, v + 150, f'{v:.0f}', ha='center', fontweight='bold', fontsize=12)
+# 1. Total Bencana
+_bar(axes[0, 0], province_features.groupby('cluster')['total_disasters'].mean(),
+     'Rata-rata Total Bencana', 'Total Kejadian Bencana')
 
-# Rumah Rusak
-cluster_damaged = province_features.groupby('cluster')['total_damaged_house'].mean()
-axes[1, 0].bar(cluster_damaged.index, cluster_damaged.values, color=colors_cluster, 
-              edgecolor='black', linewidth=2)
-axes[1, 0].set_xlabel('Cluster', fontsize=12, fontweight='bold')
-axes[1, 0].set_ylabel('Rata-rata Rumah Rusak', fontsize=12)
-axes[1, 0].set_title('Kerusakan Rumah', fontsize=14, fontweight='bold')
-axes[1, 0].set_xticks([0, 1, 2])
-axes[1, 0].set_xticklabels(['0\n(Low)', '1\n(High)', '2\n(Extreme)'])
-axes[1, 0].grid(axis='y', alpha=0.3)
-for i, v in enumerate(cluster_damaged.values):
-    axes[1, 0].text(i, v + 3000, f'{v:.0f}', ha='center', fontweight='bold', fontsize=12)
+# 2. Korban Jiwa
+_bar(axes[0, 1], province_features.groupby('cluster')['total_death'].mean(),
+     'Rata-rata Korban Meninggal', 'Korban Meninggal')
 
-# Jumlah Provinsi
-cluster_count = province_features['cluster'].value_counts().sort_index()
-axes[1, 1].bar(cluster_count.index, cluster_count.values, color=colors_cluster, 
-              edgecolor='black', linewidth=2)
-axes[1, 1].set_xlabel('Cluster', fontsize=12, fontweight='bold')
-axes[1, 1].set_ylabel('Jumlah Provinsi', fontsize=12)
-axes[1, 1].set_title('Distribusi Provinsi', fontsize=14, fontweight='bold')
-axes[1, 1].set_xticks([0, 1, 2])
-axes[1, 1].set_xticklabels(['0\n(Low)', '1\n(High)', '2\n(Extreme)'])
-axes[1, 1].grid(axis='y', alpha=0.3)
-for i, v in enumerate(cluster_count.values):
-    axes[1, 1].text(i, v + 0.8, f'{v}', ha='center', fontweight='bold', fontsize=12)
+# 3. Rumah Rusak
+_bar(axes[1, 0], province_features.groupby('cluster')['total_damaged_house'].mean(),
+     'Rata-rata Rumah Rusak', 'Kerusakan Rumah')
+
+# 4. Jumlah Provinsi
+_bar(axes[1, 1], province_features['cluster'].value_counts().sort_index().astype(float),
+     'Jumlah Provinsi', 'Distribusi Provinsi')
 
 plt.tight_layout()
 plt.savefig('cluster_comparison.png', dpi=150, bbox_inches='tight')

@@ -1,7 +1,7 @@
 # 📊 LAPORAN PROJECT: CLUSTERING WILAYAH RAWAN BENCANA INDONESIA
 
-**Dataset:** Indonesia Natural Disaster Dataset (BNPB Records 2018-2024)  
-**Metode:** K-Means Clustering  
+**Dataset:** Indonesia Natural Disaster Dataset (BNPB Records 2018-2024)
+**Metode:** K-Means Clustering
 **Tools:** Python (Pandas, Scikit-learn, Matplotlib, Seaborn)
 
 ---
@@ -17,177 +17,168 @@ Mengelompokkan provinsi di Indonesia berdasarkan pola bencana alam untuk:
 
 ## 📂 DATA OVERVIEW
 
-- **Jumlah Data:** 28,772 kejadian bencana
-- **Periode:** 1 Januari 2018 - 21 Mei 2024
-- **Cakupan:** 40 provinsi di Indonesia
+- **Jumlah Data:** 28.772 kejadian bencana (setelah cleaning)
+- **Periode:** 1 Januari 2018 – 21 Mei 2024
+- **Cakupan:** **38 provinsi** (setelah normalisasi nama duplikat)
 - **Level Data:** Per kabupaten/kota per kejadian
-
-### Kolom Dataset:
-1. `city_id` - ID kota/kabupaten
-2. `date` - Tanggal kejadian
-3. `disaster_type` - Jenis bencana
-4. `city` - Nama kota/kabupaten
-5. `province` - Nama provinsi
-6. `cause` - Penyebab bencana
-7. `death` - Korban meninggal
-8. `missing_person` - Orang hilang
-9. `injured_person` - Korban luka
-10. `damaged_house` - Rumah rusak
-11. `flooded_house` - Rumah terendam
-12. `damaged_facility` - Fasilitas rusak
 
 ---
 
-## 🔧 PREPROCESSING
+## 🔧 PREPROCESSING & PENANGANAN ANOMALI 2018
+
+Tahun 2018 memuat beberapa bencana katastropik (Gempa-Tsunami Palu di Sulawesi Tengah, Gempa Lombok di NTB, Tsunami Selat Sunda di Banten) yang membuat **satu kejadian mendominasi total provinsi** dan mengganggu clustering. Beberapa langkah diambil untuk menanganinya:
 
 ### 1. Handling Missing Values
-- `death`: 1 missing value → di-drop
-- `missing_person`, `flooded_house`, `damaged_house`, `damaged_facility`: Missing values di-fill dengan 0
+- `death`: 1 missing → di-drop
+- `missing_person`, `flooded_house`, `damaged_house`, `damaged_facility`: di-fill 0
 
-### 2. Feature Engineering
-Agregasi data per provinsi:
-- **Total kejadian bencana**
-- **Total korban jiwa** (meninggal, luka, hilang)
-- **Total kerusakan** (rumah rusak, rumah terendam, fasilitas)
-- **Frekuensi per jenis bencana** (banjir, longsor, cuaca ekstrem, dll)
+### 2. Normalisasi Nama Provinsi Duplikat
+- `P A P U A` → `PAPUA`
+- `DAERAH ISTIMEWA YOGYAKARTA` → `DI YOGYAKARTA`
+- Hasil: **40 → 38 provinsi** (provinsi pemekaran Papua 2022 tetap terpisah)
 
-**Total fitur:** 19 features per provinsi
+### 3. Feature Engineering
+Agregasi per provinsi (19 fitur): total bencana, korban (meninggal/luka/hilang), kerusakan (rumah rusak/terendam/fasilitas), dan frekuensi per jenis bencana.
 
-### 3. Standardization
-Data di-standardize menggunakan `StandardScaler` untuk menghindari bias skala.
+### 4. Transformasi & Scaling (anti-outlier)
+- **`log1p`** pada seluruh fitur → meredam ekor kanan ekstrem agar satu bencana 2018 tidak mendominasi.
+- **`RobustScaler`** (median & IQR) menggantikan StandardScaler → tahan terhadap sisa outlier.
 
 ---
 
 ## 📊 CLUSTERING
 
-### Metode: K-Means Clustering
+### Penentuan Jumlah Cluster
 
-**Penentuan Jumlah Cluster Optimal:**
-- **Elbow Method:** Menunjukkan K=3 atau K=4 sebagai kandidat
-- **Silhouette Score:** K=3 memiliki score tertinggi (0.5920)
-- **Keputusan:** **K=3** dipilih
+| K | Silhouette Score |
+|---|------------------|
+| 2 | **0.4871** (tertinggi) |
+| 3 | 0.3315 |
+| 4 | 0.2963 |
 
-### Hasil Clustering:
+- Secara statistik silhouette memuncak di **K=2**, karena 5 provinsi pemekaran Papua (data hanya ~1,5 tahun) menjadi outlier "miskin data" yang memisah kuat.
+- **Keputusan: K=3 (override manual)** demi tingkatan risiko Low / High / Extreme yang lebih bermakna dan actionable.
+- **PCA explained variance:** PCA1 70,1% + PCA2 8,4% = **78,5%**.
 
-#### 🟢 **CLUSTER 0: LOW-MODERATE RISK ZONE**
-- **Jumlah Provinsi:** 36 (mayoritas Indonesia)
-- **Provinsi:** Aceh, Bali, Banten, Bengkulu, DI Yogyakarta, DKI Jakarta, dll.
+### Ringkasan Karakteristik (rata-rata per provinsi)
 
-**Karakteristik:**
-- Total Bencana: 422 kejadian
-- Korban Meninggal: 130
-- Korban Luka: 1,396
-- Rumah Rusak: 14,450
-- Rumah Terendam: 107,726
+| Metrik | 🟢 Cluster 0 (Low) | 🟠 Cluster 1 (High) | 🔴 Cluster 2 (Extreme) |
+|--------|---:|---:|---:|
+| Jumlah provinsi | 4 | 21 | 13 |
+| Total bencana | 4,5 | 338,7 | 1.664,8 |
+| Korban meninggal | 4,5 | 80,7 | 806,1 |
+| Korban luka | 10,5 | 1.118,4 | 4.032,3 |
+| Rumah rusak | 509,5 | 5.648,3 | 56.010,9 |
+| Rumah terendam | 1.955 | 90.844 | 339.755 |
 
-**Bencana Dominan:**
-1. Banjir (5,481 kejadian)
-2. Kebakaran Hutan & Lahan (3,929 kejadian)
-3. Cuaca Ekstrem (3,202 kejadian)
-
-**Insight:** Provinsi-provinsi ini memiliki risiko bencana yang lebih moderat, namun tetap perlu kesiapsiagaan terutama untuk banjir dan kebakaran hutan.
-
-**Rekomendasi:**
-- ✅ Maintain readiness (stock logistik, pelatihan SAR)
-- 🔥 Mitigasi kebakaran hutan (patroli, kampanye anti-pembakaran)
-- 💪 Strengthen local capacity (BPBD, relawan)
+> Gradasi metrik naik konsisten (Low < High < Extreme) di semua dimensi — pelabelan sudah valid.
 
 ---
 
-#### 🟠 **CLUSTER 1: EXTREME RISK ZONE**
-- **Jumlah Provinsi:** 1
-- **Provinsi:** SULAWESI TENGAH
+## 🗂️ DAFTAR PROVINSI PER CLUSTER
 
-**Karakteristik:**
-- Total Bencana: 525 kejadian
-- **Korban Meninggal: 4,261 (TERTINGGI!)**
-- Korban Luka: 5,324
-- Rumah Rusak: 113,903
-- Rumah Terendam: 63,156
+### 🟢 CLUSTER 0 — LOW RISK (4 provinsi)
+Provinsi pemekaran Papua 2022 dengan periode data sangat pendek (kejadian sangat sedikit).
 
-**Bencana Dominan:**
-1. Banjir (384 kejadian)
-2. Cuaca Ekstrem (65 kejadian)
-3. Gelombang Pasang/Abrasi (22 kejadian)
+1. PAPUA BARAT DAYA
+2. PAPUA PEGUNUNGAN
+3. PAPUA SELATAN
+4. PAPUA TENGAH
 
-**Insight:** Sulawesi Tengah memiliki tingkat keparahan bencana tertinggi, terutama karena gempa & tsunami Palu 2018 yang menyebabkan ribuan korban jiwa.
-
-**Rekomendasi:**
-- ⚠️ **Prioritas #1** untuk early warning system
-- Penguatan infrastruktur tahan gempa & tsunami
-- Evakuasi drills rutin untuk penduduk pesisir
+**Bencana dominan:** Banjir (13), Tanah Longsor (3)
+**Catatan:** Risiko rendah di sini lebih mencerminkan **keterbatasan periode data** (~1,5 thn), bukan tentu bebas risiko. Perlu pemantauan lanjutan saat datanya lengkap.
 
 ---
 
-#### 🔴 **CLUSTER 2: HIGH RISK ZONE**
-- **Jumlah Provinsi:** 3
-- **Provinsi:** JAWA BARAT, JAWA TENGAH, JAWA TIMUR
+### 🟠 CLUSTER 1 — HIGH RISK (21 provinsi)
+Provinsi dengan risiko menengah — frekuensi & dampak signifikan namun di bawah zona ekstrem.
 
-**Karakteristik:**
-- **Total Bencana: 4,349 kejadian (TERTINGGI!)**
-- Korban Meninggal: 1,082
-- Korban Luka: 6,783
-- Rumah Rusak: 71,560
-- **Rumah Terendam: 797,016 (TERTINGGI!)**
+1. BENGKULU
+2. DI YOGYAKARTA
+3. DKI JAKARTA
+4. GORONTALO
+5. JAMBI
+6. KALIMANTAN BARAT
+7. KALIMANTAN TENGAH
+8. KALIMANTAN TIMUR
+9. KALIMANTAN UTARA
+10. KEPULAUAN BANGKA BELITUNG
+11. KEPULAUAN RIAU
+12. LAMPUNG
+13. MALUKU
+14. MALUKU UTARA
+15. PAPUA
+16. PAPUA BARAT
+17. RIAU
+18. SULAWESI BARAT
+19. SULAWESI TENGGARA
+20. SULAWESI UTARA
+21. SUMATERA SELATAN
 
-**Bencana Dominan:**
-1. Tanah Longsor (4,094 kejadian)
-2. Cuaca Ekstrem (4,001 kejadian)
-3. Banjir (2,740 kejadian)
+**Bencana dominan:** Banjir (2.734), Kebakaran Hutan & Lahan (2.297), Cuaca Ekstrem (997), Tanah Longsor (634)
 
-**Insight:** Pulau Jawa memiliki frekuensi bencana paling tinggi karena kepadatan penduduk, curah hujan tinggi, dan kondisi geografis (pegunungan + dataran rendah).
+---
 
-**Rekomendasi:**
-- 🌊 Fokus pada **mitigasi banjir** (drainase, waduk, normalisasi sungai)
-- ⛰️ Mitigasi longsor (reboisasi, retaining walls)
-- 🏗️ Infrastruktur resilient (rumah tahan bencana)
-- 📱 Sistem peringatan dini berbasis teknologi (SMS blast, app)
+### 🔴 CLUSTER 2 — EXTREME RISK (13 provinsi)
+Provinsi paling rawan — frekuensi tinggi dan/atau dampak korban & kerusakan terbesar.
+
+1. ACEH
+2. BALI
+3. BANTEN
+4. JAWA BARAT
+5. JAWA TENGAH
+6. JAWA TIMUR
+7. KALIMANTAN SELATAN
+8. NUSA TENGGARA BARAT
+9. NUSA TENGGARA TIMUR
+10. SULAWESI SELATAN
+11. SULAWESI TENGAH
+12. SUMATERA BARAT
+13. SUMATERA UTARA
+
+**Bencana dominan:** Cuaca Ekstrem (6.271), Banjir (5.858), Tanah Longsor (4.948), Kebakaran Hutan & Lahan (2.670)
+
+**Sorotan provinsi (efek 2018 kini terdistribusi wajar):**
+- **Jawa Barat** — frekuensi tertinggi nasional (6.159 kejadian, 130.493 rumah rusak).
+- **Sulawesi Tengah** — korban meninggal tertinggi (4.261) & rumah rusak 113.903 akibat Gempa-Tsunami Palu 2018. Kini **berkelompok wajar** bersama provinsi ekstrem lain, bukan lagi cluster tunggal.
+- **Nusa Tenggara Barat** — rumah rusak tertinggi nasional (234.980) akibat Gempa Lombok 2018.
+- **Banten** — korban luka tinggi (10.966) akibat Tsunami Selat Sunda 2018.
 
 ---
 
 ## 📈 KEY INSIGHTS
 
-### Top 10 Provinsi Paling Rawan Bencana (Berdasarkan Frekuensi):
-1. **Jawa Barat:** 6,159 kejadian
-2. **Jawa Tengah:** 4,500 kejadian
-3. **Jawa Timur:** 2,387 kejadian
-4. **Aceh:** 1,548 kejadian
-5. **Kalimantan Selatan:** 1,403 kejadian
-6. **Sulawesi Selatan:** 1,182 kejadian
-7. **Sumatera Barat:** 921 kejadian
-8. **Sumatera Utara:** 848 kejadian
-9. **Riau:** 721 kejadian
-10. **Kalimantan Tengah:** 653 kejadian
+### Top 10 Provinsi Berdasarkan Frekuensi Bencana
+1. Jawa Barat — 6.159
+2. Jawa Tengah — 4.500
+3. Jawa Timur — 2.387
+4. Aceh — 1.548
+5. Kalimantan Selatan — 1.403
+6. Sulawesi Selatan — 1.182
+7. Sumatera Barat — 921
+8. Sumatera Utara — 848
+9. Riau — 721
+10. Kalimantan Tengah — 653
 
-### Jenis Bencana Paling Sering (Nasional):
-1. **Banjir:** 8,605 kejadian (29.9%)
-2. **Cuaca Ekstrem:** 7,268 kejadian (25.3%)
-3. **Tanah Longsor:** 5,585 kejadian (19.4%)
-4. **Kebakaran Hutan & Lahan:** 4,967 kejadian (17.3%)
-5. **Puting Beliung:** 1,113 kejadian (3.9%)
+### Jenis Bencana Paling Sering (Nasional)
+1. Banjir — 8.605 (29,9%)
+2. Cuaca Ekstrem — 7.268 (25,3%)
+3. Tanah Longsor — 5.585 (19,4%)
+4. Kebakaran Hutan & Lahan — 4.967 (17,3%)
+5. Puting Beliung — 1.113 (3,9%)
 
 ---
 
-## 📊 VISUALISASI
+## 🎯 KESIMPULAN & REKOMENDASI
 
-### Files yang Dihasilkan:
+1. **Tiga zona risiko Indonesia (K=3):**
+   - 🟢 **Low (4 prov, Papua pemekaran):** lengkapi/pantau data; bangun kapasitas BPBD baru.
+   - 🟠 **High (21 prov):** prioritas mitigasi banjir & karhutla; perkuat early warning.
+   - 🔴 **Extreme (13 prov):** prioritas tertinggi — infrastruktur tahan bencana, sistem peringatan dini gempa/tsunami (khususnya Sulteng, NTB, Banten), normalisasi sungai & mitigasi longsor (Pulau Jawa).
 
-1. **`elbow_method.png`**
-   - Grafik Elbow Method & Silhouette Score
-   - Menunjukkan K=3 sebagai optimal
+2. **Pulau Jawa = hotspot frekuensi** (Jabar, Jateng, Jatim) → fokus banjir, longsor, cuaca ekstrem.
 
-2. **`clustering_visualization.png`**
-   - Scatter plot PCA (2 komponen)
-   - Visualisasi 3 cluster dengan label provinsi
-   - Explained variance: 63.16%
-
-3. **`cluster_comparison.png`**
-   - Bar chart perbandingan karakteristik cluster
-   - 4 metrics: Total Bencana, Korban Jiwa, Rumah Rusak, Jumlah Provinsi
-
-4. **`province_heatmap.png`**
-   - Heatmap top 15 provinsi paling rawan
-   - Normalized values untuk 4 metrics utama
+3. **Catatan metodologis:** silhouette optimal sebenarnya K=2; K=3 dipilih untuk narasi 3 tingkatan. Alternatif: gabungkan/keluarkan provinsi Papua pemekaran agar tingkatan lebih murni berbasis risiko (bukan ketersediaan data).
 
 ---
 
@@ -195,53 +186,15 @@ Data di-standardize menggunakan `StandardScaler` untuk menghindari bias skala.
 
 | File | Deskripsi |
 |------|-----------|
-| `clustering_province_features.csv` | Feature matrix (19 features × 40 provinsi) |
-| `clustering_results.csv` | Hasil clustering dengan label cluster per provinsi |
-| `cluster_interpretation.txt` | Interpretasi detail setiap cluster |
-| `elbow_method.png` | Grafik penentuan K optimal |
-| `clustering_visualization.png` | PCA visualization |
-| `cluster_comparison.png` | Bar chart comparison |
+| `clustering_province_features.csv` | Feature matrix (19 fitur × 38 provinsi) |
+| `clustering_results.csv` | Hasil clustering + label cluster per provinsi |
+| `elbow_method.png` | Elbow & Silhouette score |
+| `clustering_visualization.png` | PCA scatter plot (78,5% variance) |
+| `cluster_comparison.png` | Bar chart perbandingan karakteristik |
 | `province_heatmap.png` | Heatmap top 15 provinsi |
 
 ---
 
-## 🎯 KESIMPULAN
-
-1. **Indonesia memiliki 3 zona risiko bencana yang berbeda:**
-   - **Cluster 0 - Low-Moderate Risk (36 prov):** Maintain readiness & local capacity
-   - **Cluster 1 - Extreme Risk (Sulteng):** Prioritas tertinggi untuk mitigasi gempa & tsunami
-   - **Cluster 2 - High Risk (Jawa):** Fokus pada banjir, longsor, cuaca ekstrem
-
-2. **Pulau Jawa adalah hotspot bencana** dengan 13,046 kejadian (45.3% dari total nasional)
-
-3. **Banjir adalah ancaman #1** (8,605 kejadian), disusul cuaca ekstrem dan tanah longsor
-
-4. **Rekomendasi kebijakan:**
-   - Alokasi budget BNPB proporsional dengan cluster risk
-   - Early warning system berbasis teknologi untuk Cluster 0 & 1
-   - Infrastruktur resilient untuk Pulau Jawa
-   - Edukasi & drills rutin untuk seluruh Indonesia
-
----
-
-## 🔬 METODE EVALUASI
-
-- **Silhouette Score:** 0.5920 (K=3) → Good clustering quality
-- **Inertia:** Menunjukkan separation yang jelas antar cluster
-- **Explained Variance (PCA):** 63.16% → Representasi visual yang cukup baik
-
----
-
-## 💡 SARAN PENGEMBANGAN
-
-1. **Clustering per kabupaten/kota** (lebih granular)
-2. **Time series forecasting** untuk prediksi bencana per wilayah
-3. **Geospatial analysis** dengan peta interaktif Indonesia
-4. **Dashboard interaktif** (Streamlit/Plotly Dash) untuk visualisasi real-time
-5. **Integration dengan data cuaca & topografi** untuk model prediktif yang lebih akurat
-
----
-
-**Prepared by:** Guava 🍈  
-**Date:** 2 April 2026  
-**Tools:** Python 3.12, Pandas, Scikit-learn, Matplotlib, Seaborn
+**Prepared by:** Guava 🍈
+**Date:** 20 Mei 2026
+**Tools:** Python 3.13, Pandas, Scikit-learn, Matplotlib, Seaborn

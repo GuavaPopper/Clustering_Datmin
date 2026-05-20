@@ -1,25 +1,41 @@
 ======================================================================
 INTERPRETASI CLUSTERING WILAYAH RAWAN BENCANA INDONESIA
-(UPDATED: Cluster 0=Low, 1=Extreme, 2=High)
+(UPDATED: Cluster 0=Low, 1=High, 2=Extreme | 38 provinsi | K=3)
+Metode: log1p + RobustScaler (anti-outlier 2018)
 ======================================================================
 
-CLUSTER 0: LOW-MODERATE RISK ZONE
-Jumlah Provinsi: 36
-Deskripsi: Daerah dengan risiko bencana relatif lebih rendah
-Rekomendasi: Maintain readiness dan strengthen local capacity
+CLUSTER 0: LOW RISK ZONE
+Jumlah Provinsi: 4
+Rata-rata: 4 bencana | 5 meninggal | 11 luka | 510 rumah rusak
+Deskripsi: Provinsi pemekaran Papua 2022 dengan periode data sangat
+           pendek (~1,5 thn) sehingga jumlah kejadian sangat kecil.
+Catatan  : Risiko rendah lebih mencerminkan keterbatasan data, bukan
+           tentu bebas risiko. Perlu pemantauan saat data lengkap.
+Rekomendasi: Lengkapi/pantau data, bangun kapasitas BPBD baru.
 
 Provinsi:
-  - ACEH
-  - BALI
-  - BANTEN
+  - PAPUA BARAT DAYA
+  - PAPUA PEGUNUNGAN
+  - PAPUA SELATAN
+  - PAPUA TENGAH
+
+----------------------------------------------------------------------
+
+CLUSTER 1: HIGH RISK ZONE
+Jumlah Provinsi: 21
+Rata-rata: 339 bencana | 81 meninggal | 1.118 luka | 5.648 rumah rusak
+Deskripsi: Risiko menengah - frekuensi & dampak signifikan namun di
+           bawah zona ekstrem.
+Bencana dominan: Banjir, Kebakaran Hutan & Lahan, Cuaca Ekstrem, Longsor
+Rekomendasi: Prioritas mitigasi banjir & karhutla, perkuat early warning.
+
+Provinsi:
   - BENGKULU
-  - DAERAH ISTIMEWA YOGYAKARTA
   - DI YOGYAKARTA
   - DKI JAKARTA
   - GORONTALO
   - JAMBI
   - KALIMANTAN BARAT
-  - KALIMANTAN SELATAN
   - KALIMANTAN TENGAH
   - KALIMANTAN TIMUR
   - KALIMANTAN UTARA
@@ -28,44 +44,40 @@ Provinsi:
   - LAMPUNG
   - MALUKU
   - MALUKU UTARA
-  - NUSA TENGGARA BARAT
-  - NUSA TENGGARA TIMUR
-  - P A P U A
   - PAPUA
   - PAPUA BARAT
-  - PAPUA BARAT DAYA
-  - PAPUA PEGUNUNGAN
-  - PAPUA SELATAN
-  - PAPUA TENGAH
   - RIAU
   - SULAWESI BARAT
-  - SULAWESI SELATAN
   - SULAWESI TENGGARA
   - SULAWESI UTARA
-  - SUMATERA BARAT
   - SUMATERA SELATAN
-  - SUMATERA UTARA
 
 ----------------------------------------------------------------------
 
-CLUSTER 1: EXTREME RISK ZONE
-Jumlah Provinsi: 1
-Deskripsi: Daerah dengan korban jiwa sangat tinggi dan kerusakan ekstrem
-Rekomendasi: Prioritas utama untuk early warning system dan disaster preparedness
+CLUSTER 2: EXTREME RISK ZONE
+Jumlah Provinsi: 13
+Rata-rata: 1.665 bencana | 806 meninggal | 4.032 luka | 56.011 rumah rusak
+Deskripsi: Provinsi paling rawan - frekuensi tinggi dan/atau dampak
+           korban & kerusakan terbesar. Efek bencana besar 2018 (Palu,
+           Lombok, Selat Sunda) kini terdistribusi wajar di sini.
+Bencana dominan: Cuaca Ekstrem, Banjir, Tanah Longsor, Kebakaran Hutan
+Rekomendasi: Prioritas tertinggi - infrastruktur tahan bencana, early
+             warning gempa/tsunami (Sulteng, NTB, Banten), mitigasi
+             banjir & longsor (Pulau Jawa).
 
 Provinsi:
-  - SULAWESI TENGAH
-
-----------------------------------------------------------------------
-
-CLUSTER 2: HIGH RISK ZONE
-Jumlah Provinsi: 3
-Deskripsi: Daerah dengan frekuensi bencana sangat tinggi (Pulau Jawa)
-Rekomendasi: Fokus pada mitigasi banjir dan infrastruktur resilient
-
-Provinsi:
+  - ACEH
+  - BALI
+  - BANTEN
   - JAWA BARAT
   - JAWA TENGAH
   - JAWA TIMUR
+  - KALIMANTAN SELATAN
+  - NUSA TENGGARA BARAT
+  - NUSA TENGGARA TIMUR
+  - SULAWESI SELATAN
+  - SULAWESI TENGAH
+  - SUMATERA BARAT
+  - SUMATERA UTARA
 
 ----------------------------------------------------------------------
