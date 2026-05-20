@@ -27,15 +27,15 @@ Project ini menganalisis dataset bencana alam Indonesia (2018-2024) dari BNPB un
 - Rata-rata: 422 kejadian, 130 korban meninggal
 - **Rekomendasi:** Maintain readiness & strengthen local capacity
 
-### 🟠 **Cluster 1: EXTREME RISK**
-- **1 provinsi:** SULAWESI TENGAH
-- Rata-rata: 525 kejadian, **4,261 korban meninggal** (tertinggi!)
-- **Rekomendasi:** Prioritas #1 untuk early warning system & disaster preparedness
-
-### 🔴 **Cluster 2: HIGH RISK**
+### 🟠 **Cluster 1: HIGH RISK**
 - **3 provinsi:** JAWA BARAT, JAWA TENGAH, JAWA TIMUR
 - Rata-rata: **4,349 kejadian** (tertinggi!), 1,082 korban meninggal
 - **Rekomendasi:** Fokus mitigasi banjir, longsor, & infrastruktur resilient
+
+### 🔴 **Cluster 2: EXTREME RISK**
+- **1 provinsi:** SULAWESI TENGAH
+- Rata-rata: 525 kejadian, **4,261 korban meninggal** (tertinggi!)
+- **Rekomendasi:** Prioritas #1 untuk early warning system & disaster preparedness
 
 ---
 
@@ -142,7 +142,7 @@ pip install pandas numpy matplotlib seaborn scikit-learn openpyxl
 
 ### 4️⃣ **Relabeling Cluster**
 - Cluster di-relabel berdasarkan composite severity score
-- **0 = Low Risk, 1 = Extreme Risk, 2 = High Risk**
+- **0 = Low Risk, 1 = High Risk, 2 = Extreme Risk**
 
 ### 5️⃣ **Visualisasi**
 - PCA 2D scatter plot (63.16% explained variance)
@@ -162,16 +162,16 @@ pip install pandas numpy matplotlib seaborn scikit-learn openpyxl
 
 ## 💡 Rekomendasi Kebijakan
 
-### 🔴 **Untuk Cluster 2 (High Risk - Jawa)**
+### 🔴 **Untuk Cluster 2 (Extreme Risk - Sulteng)**
+- **Prioritas #1** untuk early warning system gempa & tsunami
+- Penguatan infrastruktur tahan gempa
+- Evakuasi drills rutin untuk penduduk pesisir
+
+### 🟠 **Untuk Cluster 1 (High Risk - Jawa)**
 - Fokus mitigasi **banjir** (drainase, waduk, normalisasi sungai)
 - Mitigasi **tanah longsor** (reboisasi, retaining walls)
 - Infrastruktur resilient (rumah tahan bencana)
 - Sistem peringatan dini berbasis teknologi
-
-### 🟠 **Untuk Cluster 1 (Extreme Risk - Sulteng)**
-- **Prioritas #1** untuk early warning system gempa & tsunami
-- Penguatan infrastruktur tahan gempa
-- Evakuasi drills rutin untuk penduduk pesisir
 
 ### 🟢 **Untuk Cluster 0 (Low-Moderate Risk)**
 - Maintain readiness (stock logistik, pelatihan SAR)

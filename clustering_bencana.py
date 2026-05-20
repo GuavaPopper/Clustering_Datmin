@@ -38,11 +38,8 @@ print("\n🔧 STEP 2: PREPROCESSING")
 
 # Handle missing values
 df.dropna(subset=['death'], inplace=True)
-df['missing_person'].fillna(0, inplace=True)
-df['injured_person'].fillna(0, inplace=True)
-df['flooded_house'].fillna(0, inplace=True)
-df['damaged_house'].fillna(0, inplace=True)
-df['damaged_facility'].fillna(0, inplace=True)
+for col in ['missing_person', 'injured_person', 'flooded_house', 'damaged_house', 'damaged_facility']:
+    df[col] = df[col].fillna(0)
 
 print(f"✅ Missing values handled")
 print(f"✅ Data after cleaning: {len(df)} rows")
@@ -180,7 +177,7 @@ for old, new in old_to_new.items():
 # Apply relabeling
 province_features['cluster'] = province_features['cluster'].map(old_to_new)
 
-print(f"\n✅ Cluster relabeled (0=Low, 1=Extreme, 2=High)")
+print(f"\n✅ Cluster relabeled (0=Low, 1=High, 2=Extreme)")
 
 # ========================================
 # 8. CLUSTER ANALYSIS
@@ -219,9 +216,13 @@ province_features['PCA2'] = features_pca[:, 1]
 # Plot
 plt.figure(figsize=(16, 10))
 
-colors = ['#44AA44', '#FFA500', '#FF4444']
-cluster_names = ['Cluster 0: LOW RISK', 'Cluster 1: EXTREME RISK', 'Cluster 2: HIGH RISK']
-markers = ['o', '^', 's']
+_all_colors  = ['#44AA44', '#FFA500', '#FF4444', '#8844AA', '#4488FF']
+_all_names   = ['Cluster 0: LOW RISK', 'Cluster 1: HIGH RISK', 'Cluster 2: EXTREME RISK',
+                'Cluster 3: RISK-4', 'Cluster 4: RISK-5']
+_all_markers = ['o', '^', 's', 'D', 'P']
+colors        = _all_colors[:optimal_k]
+cluster_names = _all_names[:optimal_k]
+markers       = _all_markers[:optimal_k]
 
 for i in range(optimal_k):
     cluster_data = province_features[province_features['cluster'] == i]
@@ -238,7 +239,7 @@ plt.xlabel(f'PCA 1 ({pca.explained_variance_ratio_[0]*100:.1f}% variance)',
           fontsize=14, fontweight='bold')
 plt.ylabel(f'PCA 2 ({pca.explained_variance_ratio_[1]*100:.1f}% variance)', 
           fontsize=14, fontweight='bold')
-plt.title('Clustering Wilayah Rawan Bencana Indonesia\n(0=Low Risk, 1=Extreme Risk, 2=High Risk)', 
+plt.title('Clustering Wilayah Rawan Bencana Indonesia\n(0=Low Risk, 1=High Risk, 2=Extreme Risk)', 
           fontsize=18, fontweight='bold', pad=20)
 plt.legend(fontsize=13, loc='best', frameon=True, shadow=True)
 plt.grid(True, alpha=0.3, linestyle='--')
@@ -252,7 +253,7 @@ print("✅ Saved: clustering_visualization.png")
 print("\n📊 STEP 10: CLUSTER COMPARISON")
 
 fig, axes = plt.subplots(2, 2, figsize=(16, 12))
-fig.suptitle('Perbandingan Karakteristik Cluster\n(0=Low, 1=Extreme, 2=High)', 
+fig.suptitle('Perbandingan Karakteristik Cluster\n(0=Low, 1=High, 2=Extreme)', 
              fontsize=18, fontweight='bold', y=0.995)
 
 colors_cluster = ['#44AA44', '#FFA500', '#FF4444']
@@ -265,7 +266,7 @@ axes[0, 0].set_xlabel('Cluster', fontsize=12, fontweight='bold')
 axes[0, 0].set_ylabel('Rata-rata Total Bencana', fontsize=12)
 axes[0, 0].set_title('Total Kejadian Bencana', fontsize=14, fontweight='bold')
 axes[0, 0].set_xticks([0, 1, 2])
-axes[0, 0].set_xticklabels(['0\n(Low)', '1\n(Extreme)', '2\n(High)'])
+axes[0, 0].set_xticklabels(['0\n(Low)', '1\n(High)', '2\n(Extreme)'])
 axes[0, 0].grid(axis='y', alpha=0.3)
 for i, v in enumerate(cluster_avg.values):
     axes[0, 0].text(i, v + 100, f'{v:.0f}', ha='center', fontweight='bold', fontsize=12)
@@ -278,7 +279,7 @@ axes[0, 1].set_xlabel('Cluster', fontsize=12, fontweight='bold')
 axes[0, 1].set_ylabel('Rata-rata Korban Meninggal', fontsize=12)
 axes[0, 1].set_title('Korban Meninggal', fontsize=14, fontweight='bold')
 axes[0, 1].set_xticks([0, 1, 2])
-axes[0, 1].set_xticklabels(['0\n(Low)', '1\n(Extreme)', '2\n(High)'])
+axes[0, 1].set_xticklabels(['0\n(Low)', '1\n(High)', '2\n(Extreme)'])
 axes[0, 1].grid(axis='y', alpha=0.3)
 for i, v in enumerate(cluster_death.values):
     axes[0, 1].text(i, v + 150, f'{v:.0f}', ha='center', fontweight='bold', fontsize=12)
@@ -291,7 +292,7 @@ axes[1, 0].set_xlabel('Cluster', fontsize=12, fontweight='bold')
 axes[1, 0].set_ylabel('Rata-rata Rumah Rusak', fontsize=12)
 axes[1, 0].set_title('Kerusakan Rumah', fontsize=14, fontweight='bold')
 axes[1, 0].set_xticks([0, 1, 2])
-axes[1, 0].set_xticklabels(['0\n(Low)', '1\n(Extreme)', '2\n(High)'])
+axes[1, 0].set_xticklabels(['0\n(Low)', '1\n(High)', '2\n(Extreme)'])
 axes[1, 0].grid(axis='y', alpha=0.3)
 for i, v in enumerate(cluster_damaged.values):
     axes[1, 0].text(i, v + 3000, f'{v:.0f}', ha='center', fontweight='bold', fontsize=12)
@@ -304,7 +305,7 @@ axes[1, 1].set_xlabel('Cluster', fontsize=12, fontweight='bold')
 axes[1, 1].set_ylabel('Jumlah Provinsi', fontsize=12)
 axes[1, 1].set_title('Distribusi Provinsi', fontsize=14, fontweight='bold')
 axes[1, 1].set_xticks([0, 1, 2])
-axes[1, 1].set_xticklabels(['0\n(Low)', '1\n(Extreme)', '2\n(High)'])
+axes[1, 1].set_xticklabels(['0\n(Low)', '1\n(High)', '2\n(Extreme)'])
 axes[1, 1].grid(axis='y', alpha=0.3)
 for i, v in enumerate(cluster_count.values):
     axes[1, 1].text(i, v + 0.8, f'{v}', ha='center', fontweight='bold', fontsize=12)
